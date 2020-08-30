@@ -1,0 +1,7 @@
+{
+    "$schema": "service.compiler.extension.schema.json",
+    "class": "\\Ulrack\\PersistentExtension\\Component\\Compiler\\Extension\\PersistentCompiler",
+    "sortOrder": 100,
+    "key": "persistent",
+    "schema": true
+}
