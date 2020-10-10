@@ -1,3 +1,4 @@
+[![Join us on Discord](https://img.shields.io/discord/753858953452191916.svg?label=Join+us&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/wdZkMY)
 [![Build Status](https://travis-ci.com/ulrack/persistent-extension.svg?branch=master)](https://travis-ci.com/ulrack/persistent-extension)
 
 # Ulrack Persistent Extension
