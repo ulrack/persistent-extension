@@ -4,7 +4,6 @@ php:
     - '7.4'
 
 before_script:
-    - yes '' | pecl install yaml
     - composer install
 
 script:
