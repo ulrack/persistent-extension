@@ -11,10 +11,9 @@ use GrizzIt\Vfs\Common\FileSystemInterface;
 use GrizzIt\Storage\Common\StorageInterface;
 use GrizzIt\Storage\Component\ObjectStorage;
 use Ulrack\Kernel\Common\Manager\ResourceManagerInterface;
-use Ulrack\Services\Exception\DefinitionNotFoundException;
-use Ulrack\Services\Common\AbstractServiceFactoryExtension;
+use GrizzIt\Services\Common\Factory\ServiceFactoryExtensionInterface;
 
-class PersistentFactory extends AbstractServiceFactoryExtension
+class PersistentFactory implements ServiceFactoryExtensionInterface
 {
     /**
      * Persistent directory path.
@@ -26,86 +25,42 @@ class PersistentFactory extends AbstractServiceFactoryExtension
      *
      * @var ResourceManagerInterface
      */
-    private $resourceManager;
+    private ?ResourceManagerInterface $resourceManager = null;
 
     /**
      * Contains the persistent file system.
      *
      * @var FileSystemInterface
      */
-    private $persistentFileSystem;
+    private ?FileSystemInterface $persistentFileSystem = null;
 
     /**
      * Contains the open storages.
      *
      * @var StorageInterface[]
      */
-    private $openStorages = [];
+    private array $openStorages = [];
 
     /**
-     * Register a value to a service key.
+     * Converts a service key and definition to an instance.
      *
-     * @param string $serviceKey
-     * @param mixed $value
-     *
-     * @return void
-     */
-    public function registerService(string $serviceKey, $value): void
-    {
-        $this->services[$serviceKey] = $value;
-    }
-
-    /**
-     * Invoke the invocation and return the result.
-     *
-     * @param string $serviceKey
+     * @param string $key
+     * @param mixed $definition
+     * @param callable $create
      *
      * @return mixed
-     *
-     * @throws DefinitionNotFoundException When the definition can not be found.
      */
-    public function create(string $serviceKey)
-    {
-        $serviceKey = $this->preCreate(
-            $serviceKey,
-            $this->getParameters()
-        )['serviceKey'];
-
-        $internalKey = preg_replace(
-            sprintf('/^%s\\./', preg_quote($this->getKey())),
-            '',
-            $serviceKey,
-            1
-        );
-
-        $services = $this->getServices()[$this->getKey()];
-        if (!isset($services[$internalKey])) {
-            throw new DefinitionNotFoundException($serviceKey);
-        }
-
-        return $this->postCreate(
-            $serviceKey,
-            $this->createStorage(
-                $internalKey,
-                $services[$internalKey]
-            ),
-            $this->getParameters()
-        )['return'];
-    }
-
-    /**
-     * Creates a storage.
-     *
-     * @return StorageInterface
-     */
-    public function createStorage(string $key, $value): StorageInterface
-    {
+    public function create(
+        string $key,
+        mixed $definition,
+        callable $create
+    ): mixed {
         $fileName = $key . '.json';
         if (!isset($this->openStorages[$fileName])) {
             if (is_null($this->resourceManager)) {
                 /** @var ResourceManagerInterface $resourceManager */
-                $this->resourceManager = $this->superCreate(
-                    'services.core.resource.manager'
+                $this->resourceManager = $create(
+                    'internal.core.resource.manager'
                 );
             }
 
@@ -122,7 +77,7 @@ class PersistentFactory extends AbstractServiceFactoryExtension
                     );
             }
 
-            $fileValue = $value;
+            $fileValue = $definition;
             if ($this->persistentFileSystem->isFile($fileName)) {
                 $fileValue = $this->resourceManager
                     ->getFileSystemDriver()

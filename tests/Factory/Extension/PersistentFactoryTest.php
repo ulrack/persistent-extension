@@ -13,7 +13,6 @@ use GrizzIt\Storage\Common\StorageInterface;
 use GrizzIt\Vfs\Common\FileSystemDriverInterface;
 use GrizzIt\Vfs\Common\FileSystemNormalizerInterface;
 use Ulrack\Kernel\Common\Manager\ResourceManagerInterface;
-use Ulrack\Services\Exception\DefinitionNotFoundException;
 use Ulrack\PersistentExtension\Factory\Extension\PersistentFactory;
 
 /**
@@ -23,68 +22,26 @@ class PersistentFactoryTest extends TestCase
 {
     /**
      * @covers ::create
-     * @covers ::registerService
-     * @covers ::createStorage
      * @covers ::__destruct
      *
      * @return void
      */
     public function testCreate(): void
     {
-        $subject = $this->createPartialMock(
-            PersistentFactory::class,
-            [
-                'preCreate',
-                'getParameters',
-                'getKey',
-                'getServices',
-                'getInternalService',
-                'superCreate',
-                'postCreate'
-            ]
-        );
+        $subject = new PersistentFactory();
 
         $serviceKey = 'foo';
-
-        $subject->expects(static::once())
-            ->method('preCreate')
-            ->willReturn(['serviceKey' => $serviceKey]);
-
-        $subject->registerService('foo', ['bar' => 'baz']);
-
-        $subject->expects(static::once())
-            ->method('getServices')
-            ->willReturn(['persistent' => ['foo' => ['bar' => 'baz']]]);
-
-        $subject->method('getKey')
-            ->willReturn('persistent');
 
         $resourceManager = $this->createMock(ResourceManagerInterface::class);
         $varFileSystem = $this->createMock(FileSystemInterface::class);
         $fileSystemDriver = $this->createMock(FileSystemDriverInterface::class);
         $persistentFileSystem = $this->createMock(FileSystemInterface::class);
         $fileSystemNormalizer = $this->createMock(FileSystemNormalizerInterface::class);
-
-        $subject->expects(static::once())
-            ->method('superCreate')
-            ->with('services.core.resource.manager')
-            ->willReturn($resourceManager);
-
-        $subject->expects(static::once())
-            ->method('postCreate')
-            ->willReturnCallback(
-                function (
-                    string $serviceKey,
-                    StorageInterface $storage,
-                    array $parameters
-                ): array {
-                    return [
-                        'serviceKey' => $serviceKey,
-                        'return' => $storage,
-                        'parameters' => $parameters
-                    ];
-                }
-            );
+        $create = function (string $key) use ($resourceManager) {
+            if ($key === 'internal.core.resource.manager') {
+                return $resourceManager;
+            }
+        };
 
         $resourceManager->expects(static::once())
             ->method('getVarFileSystem')
@@ -101,11 +58,11 @@ class PersistentFactoryTest extends TestCase
             ->method('connect')
             ->willReturn($persistentFileSystem);
 
-        $persistentFileSystem->expects(static::once())
+        $persistentFileSystem->expects(static::exactly(2))
             ->method('isFile')
-            ->willReturn(true);
+            ->willReturnOnConsecutiveCalls(true, false);
 
-        $fileSystemDriver->expects(static::once())
+        $fileSystemDriver->expects(static::exactly(2))
             ->method('getFileSystemNormalizer')
             ->willReturn($fileSystemNormalizer);
 
@@ -113,47 +70,13 @@ class PersistentFactoryTest extends TestCase
             ->method('normalizeFromFile')
             ->willReturn(['bar' => 'baz']);
 
-        $this->assertInstanceOf(StorageInterface::class, $subject->create($serviceKey));
-    }
-
-    /**
-     * @covers ::create
-     * @covers ::registerService
-     * @covers ::createStorage
-     * @covers ::__destruct
-     *
-     * @return void
-     */
-    public function testCreateFail(): void
-    {
-        $subject = $this->createPartialMock(
-            PersistentFactory::class,
-            [
-                'preCreate',
-                'getParameters',
-                'getKey',
-                'getServices',
-                'getInternalService',
-                'superCreate',
-                'postCreate'
-            ]
+        $this->assertInstanceOf(
+            StorageInterface::class,
+            $subject->create(
+                $serviceKey,
+                ['bar' => 'baz'],
+                $create
+            )
         );
-
-        $serviceKey = 'foo';
-
-        $subject->expects(static::once())
-            ->method('preCreate')
-            ->willReturn(['serviceKey' => $serviceKey]);
-
-        $subject->method('getKey')
-            ->willReturn('persistent');
-
-        $subject->expects(static::once())
-            ->method('getServices')
-            ->willReturn(['persistent' => ['bar' => ['bar' => 'baz']]]);
-
-        $this->expectException(DefinitionNotFoundException::class);
-
-        $subject->create($serviceKey);
     }
 }

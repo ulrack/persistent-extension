@@ -1,5 +1,0 @@
-{
-    "$schema": "service.factory.extension.schema.json",
-    "class": "\\Ulrack\\PersistentExtension\\Factory\\Extension\\PersistentFactory",
-    "key": "persistent"
-}

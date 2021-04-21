@@ -1,0 +1,24 @@
+{
+    "services": {
+        "service.factory.persistent": {
+            "class": "\\Ulrack\\PersistentExtension\\Factory\\Extension\\PersistentFactory"
+        }
+    },
+    "invocations": {
+        "add.persistent.service.factory": {
+            "service": "internal.core.service.factory",
+            "method": "addExtension",
+            "parameters": {
+                "scope": "persistent",
+                "extension": "@{services.service.factory.persistent}"
+            },
+            "cache": true
+        }
+    },
+    "tags": {
+        "add.persistent.factory": {
+            "trigger": "triggers.core.service.factories",
+            "service": "invocations.add.persistent.service.factory"
+        }
+    }
+}

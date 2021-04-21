@@ -2,10 +2,12 @@
 
 The persistent storage can be used to store the state of an application on a
 specific machine. To register a storage, simply create a file in
-`configuration/persistent`. Add the following content:
+`configuration/services`. Add the following content:
 ```json
 {
-    "my-persistent-storage": {}
+    "persistent": {
+        "my-persistent-storage": {}
+    }
 }
 ```
 
